@@ -1,8 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:puzzle_game/constants.dart';
 
-class PuzzleGame with ChangeNotifier{
+class PuzzleGame with ChangeNotifier {
   final String questionString =
       "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout.";
   late String removeSpaceAndSpecialChars;
@@ -10,6 +11,7 @@ class PuzzleGame with ChangeNotifier{
   late Set<String> allStringsOne;
   late Set<int> allNumbersOne;
   late List<GameCell> allCells;
+  late List<String> alphabet = Constants.alphabet;
   bool isAnyCellNotSelected = true;
   void prepareGameString() {
     removeSpaceAndSpecialChars = questionString
@@ -27,9 +29,9 @@ class PuzzleGame with ChangeNotifier{
     allCells = allString.map((e) {
       var index = allStringsOne.toList().indexOf(e);
       return GameCell(
-        cellNumber: allNumbersOne.elementAt(index),
-        cellAnswer: e,
-      );
+          cellNumber: allNumbersOne.elementAt(index),
+          cellAnswer: e,
+          cellType: CellType.changable);
     }).toList();
 
     int answerLength = (allString.length * .07).toInt();
@@ -39,18 +41,33 @@ class PuzzleGame with ChangeNotifier{
       allCells.forEach((element) {
         if (element.cellNumber == cell.cellNumber) {
           element.updateAnswer(element.cellAnswer);
+          element.cellType = CellType.fix;
         }
       });
+      alphabet.remove(cell.cellAnswer);
     }
+  }
+
+  void selectCell(int selectedIndex) {
+    if (allCells[selectedIndex].cellType == CellType.fix) return;
+    if (isAnyCellNotSelected || allCells[selectedIndex].isSelected) {
+      allCells[selectedIndex].updateSelecState();
+    }
+    isAnyCellNotSelected =
+        !allCells.any((element) => element.isSelected == true);
     notifyListeners();
   }
 
-  void selectCell(int selectedIndex){
-    if(isAnyCellNotSelected || allCells[selectedIndex].isSelected)
-      {
-      allCells[selectedIndex].updateSelecState();
-    }
-    isAnyCellNotSelected = !allCells.any((element) => element.isSelected == true);
+  void enterLetter(int selectedIndex) {
+    if (!allCells.any((element) => element.isSelected == true)) return;
+    var selectedCell =
+        allCells.firstWhere((element) => element.isSelected == true);
+    allCells.forEach((element) {
+      if (element.cellNumber == selectedCell.cellNumber) {
+        element.updateAnswer(alphabet[selectedIndex]);
+      }
+    });
+    selectedCell.updateSelecState();
     notifyListeners();
   }
 }
@@ -61,16 +78,20 @@ class GameCell {
   final int cellNumber;
   bool isCorrect = false;
   bool isSelected = false;
+  CellType cellType;
 
-  GameCell({required this.cellAnswer, required this.cellNumber});
+  GameCell({
+    required this.cellAnswer,
+    required this.cellNumber,
+    required this.cellType,
+  });
 
   void updateAnswer(String input) {
     userInput = input;
     isCorrect = cellAnswer == userInput;
-  
   }
 
   void updateSelecState() => isSelected = !isSelected;
-
-
 }
+
+enum CellType { changable, fix }
