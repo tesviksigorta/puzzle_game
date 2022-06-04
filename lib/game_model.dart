@@ -68,6 +68,7 @@ class PuzzleGame with ChangeNotifier {
       }
     });
     selectedCell.updateSelecState();
+    isAnyCellNotSelected = true;
     notifyListeners();
   }
 }
